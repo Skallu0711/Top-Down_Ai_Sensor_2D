@@ -1,5 +1,5 @@
-# 2D_TopDown_FOV
-"Field of View" game mechanics tool editor designed to be used in 2D top-down perspective games.
+# Field of View
+"Field of View" game mechanics tool designed to be used in 2D top-down perspective games.
 
 ## How does this mechanics work?
 Script peforms cyclical operations of checking whether the target is inside the character's field of view.
@@ -15,18 +15,20 @@ The basic steps of "zone check":
 2. Set game object that will be considered as target
 ```csharp
 
-[HideInInspector] public GameObject target; // you can display this in inspector if You want to choose target manually.
+[HideInInspector] public GameObject target; // you can display this in inspector if You want to choose target manually
 
 private void Awake()
 {
     // set target here
-    target = PlayerController.self.gameObject // get rid of this, if You are setting this via inspector.
+    target = PlayerController.self.gameObject // get rid of this, if You are setting this via inspector
 }
 ```
 
 ## Field of view editor tool overwiew
 This script has its own custom editor tool that visualizes cahracter's field of view by drawing debug lines on scene.
 Every parameter that makes up the "Field of View" can be modified via isnpector to suit Your needs.
+
+<img src="../../../../images/fov_inspector.png">
 
 Field Of View parameters:
 - View outer radius - area that determines the ability to detect target within it, provided that they are also within the viewing angle cone
@@ -44,5 +46,4 @@ Field Of View handles parameters:
 - Attack Range Color - color of the attack range radius
 - Thickness - thickness of the debug handles
 
-<img src="../../../../images/fov_inspector.png">
 <img src="../../../../images/fov_handles.png">
