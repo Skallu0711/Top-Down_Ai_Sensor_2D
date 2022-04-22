@@ -1,25 +1,19 @@
 # TopDown_FOV
-Character Field of View representation in 2D top-down perspective
+Simple 2D top-down perspective project which uses my implementation of character's "Field of View" mechanics.
 
-## How it works:
-1. Check for visible targets from target layer mask inside view radius.
-2. If there is at least one target inside view radius, then calculate direction to it.
-3. If the target is inside view angle, then calculate distance to it.
-4. If player character don't collide with any objects from obstacle layer mask during raycasting, it means that the target is spotted.
-5. Save target transform component in the array.
-6. Draw debug line, which visualises distance between player character and spotted target.
+<img src="images/project.gif">
 
-- With each check, array of spotted target's transform components is being cleared to avoid duplicating.
-- The check is delayed 0.2 seconds to increase performance
+## How does this "Field of View" work?
+Script peforms cyclical operations of checking whether the target is inside the character's field of view.
+Every "zone check" operation is is delayed by some time to increase performance. This value is modifiable via script.
 
-## Field of view editor tool
+The basic steps of "zone check":
+1. Check if the target is inside outer view radius
+2. Then check if it is inside inner view radius and if it is not behind any obstacle.
+3. If target is inside outer view radius but outside the inner radius, check if its inside view angle, then check if it is not behind any obstacle.
 
-- View radius can be modified in range between 0 and 10.
-- View angle can be modified in range of 360 degrees.
-- Color of debug handles and their thickness can be easily changed.
-- Layer mask corresponding to raycasting targets can be easily changed.
+[Click here to read more detailed informations about "Field of View" tool](Top_Down_Fov/Assets/Scripts/FOV/)
 
-<img src="images/scr2.png">
-
-## Project Screenshot
-<img src="images/scr1.png">
+## My package
+Here is a link for my custom package, which i used in this project:
+https://github.com/Skallu0711/Skallu-Utils

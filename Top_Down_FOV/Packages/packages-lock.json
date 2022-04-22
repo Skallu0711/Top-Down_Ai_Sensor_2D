@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.skallu.skallu-utils": {
+      "version": "https://github.com/Skallu0711/Skallu-Utils.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "e7bf2e0f77dbfa1515cf10ce299b4b8936e7ad97"
+    },
     "com.unity.2d.animation": {
       "version": "5.0.6",
       "depth": 0,

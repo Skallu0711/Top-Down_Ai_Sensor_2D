@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Obstacle
   - Enemy
+  - Bullet
+  - Wall
   layers:
   - Default
   - TransparentFX
