@@ -30,7 +30,7 @@ private void Awake()
 This script has built-in custom editor tool that visualizes cahracter's field of view by drawing debug lines on scene.
 Every parameter that makes up the "Field of View" can be modified via isnpector to suit Your needs.
 
-<img src="../../../../images/fov_handles.png">
+<img src="images/fov_handles.png">
 
 Field Of View parameters:
 - View outer radius - area that determines the ability to detect target within it, provided that they are also within the viewing angle cone
@@ -48,7 +48,7 @@ Field Of View handles parameters:
 - Attack Range Color - color of the attack range radius
 - Thickness - thickness of the debug handles
 
-<img src="../../../../images/fov_inspector.png">
+<img src="images/fov_inspector.png">
 
 ## My package
 Here is a link for my custom package, which i used in this project:
