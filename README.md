@@ -16,39 +16,18 @@ The basic steps of "zone check":
 1. Set values that suit your needs inside inspector
 2. Set game object that will be considered as target
 ```csharp
-
-[HideInInspector] public GameObject target; // you can display this in inspector if You want to choose target manually
-
 private void Awake()
-{
-    // set target here
-    target = PlayerController.self.gameObject // get rid of this, if You are setting this via inspector
-}
+    {
+        // set target here
+        // target = 
+    }
 ```
 
 ## FOV editor tool
-This script has built-in custom editor tool that visualizes cahracter's field of view by drawing debug lines on scene.
-Every parameter that makes up the "Field of View" can be modified via isnpector to suit Your needs.
+This script has built-in editor tool that visualizes character's field of view by drawing debug circles and lines on scene.
+Every parameter that makes up the "Field of View" can be modified via inspector to suit Your needs.
 
 <img src="images/fov_handles.png">
-
-Field Of View parameters:
-- View outer radius - area that determines the ability to detect target within it, provided that they are also within the viewing angle cone
-- View inner radius - the minimum area that determines the ability to detect target within it
-- View angle - angle (in degrees), which determines the ability to spot objects within its area
-- Safe zone radius - an optional area that can be used, e.g. to retreating, when target is too close
-- Attack range radius - an optional area that can be used, e.g. to detect if a character is close enough to attack
-- Zone check interval - time interval between zone checks (e.g. fov update).
-- Cast radius - value of the circle cast radius
-- Obstacle Layer mask - layer with all obstacles, which is used during circle cast
-
-Field Of View handles parameters:
-- Main Fov Color - color of the inner & outer view radiuses and view angle
-- Safe Zone Color - color of the safe zone radius
-- Attack Range Color - color of the attack range radius
-- Thickness - thickness of the debug handles
-
-<img src="images/fov_inspector.png">
 
 ## My package
 Here is a link for my custom package, which i used in this project:
