@@ -7,139 +7,120 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 
-[CustomEditor(typeof(FieldOfView))]
+[CustomEditor(typeof(FieldOfView)), CanEditMultipleObjects]
 public class FieldOfViewEditor : Editor
 {
     private FieldOfView fov;
-    private Vector3 fovPos;
-    
+
     // use these two variables when character sprite is not centered
     private float offset = 0f;
     private Vector3 fixedFovPos;
 
-    #region INSPECTOR FLAGS
-    private bool showFovParameters = true; // is "FOV Parameters" segment unwrapped
-    private bool showFovEditorParameters = true; // is "FOV Editor Parameters" segment unwrapped
-    private bool showFovChecks; // is "FOV Zone Checks" segment unwrapped
-    
-    private bool useSpecialZones; // is "use special zones" toggled
+    #region GROUP WRAPPING RELATED FIELDS
+    private bool showFovParameters = true; // is "FOV Parameters" foldout header group unwrapped
+    private bool showFovEditorParameters = true; // is "FOV Editor Parameters" foldout header group unwrapped
+    private bool showFovChecks; // is "FOV Zone Checks" foldout header group unwrapped
+    private SerializedProperty useSpecialZones;
     #endregion
 
-    #region FOV EDITOR PARAMETERS
-    private Color mainFovColor = Color.white; // view radius and view angle handles color
-    private Color safeZoneColor = Color.yellow; // safe zone handles color
-    private Color attackRangeColor = Color.red; // attack range handles color
-    private float thickness = 0.5f; // handles thickness
+    private void OnEnable()
+    {
+        fov = (FieldOfView) target;
+        useSpecialZones = serializedObject.FindProperty("useSpecialZones");
+    }
 
-    private readonly Color targetSpottedColor = Color.green;
-    private readonly Color targetHiddenColor = Color.red;
-    #endregion
-
-    private void Awake() => fov = (FieldOfView) target;
+    /// <summary>
+    /// Creates slider field for serialized property
+    /// </summary>
+    /// <param name="property"> serialized property </param>
+    /// <param name="leftValue"> min value </param>
+    /// <param name="rightValue"> max value </param>
+    /// <param name="label"> label (name, tooltip) </param>
+    private void PropertySliderField(SerializedProperty property, float leftValue, float rightValue, GUIContent label)
+    {
+        var position = EditorGUILayout.GetControlRect();
+        
+        label = EditorGUI.BeginProperty(position, label, property);
+        
+        EditorGUI.BeginChangeCheck();
+        var newValue = EditorGUI.Slider(position, label, property.floatValue, leftValue, rightValue);
+        
+        if (EditorGUI.EndChangeCheck())
+            property.floatValue = newValue;
+        
+        EditorGUI.EndProperty();
+    }
 
     public override void OnInspectorGUI()
     {
         if (fov == null) return;
-
+        
         // default "script" object field
         EditorGUI.BeginDisabledGroup(true); 
         EditorGUILayout.ObjectField("Script", MonoScript.FromMonoBehaviour((MonoBehaviour)target), GetType(), false);
         EditorGUI.EndDisabledGroup();
-
-        // shows Field of View Parameters
-        showFovParameters = EditorGUILayout.BeginFoldoutHeaderGroup(showFovParameters, "Field of View Parameters");
+        
+        serializedObject.Update();
+        EditorGUILayout.BeginVertical();
+        
+        #region FOV PARAMETERS GROUP
+        showFovParameters = EditorGUILayout.BeginFoldoutHeaderGroup(showFovParameters, "Main parameters");
         if (showFovParameters)
         {
-            fov.viewOuterRadius = EditorGUILayout.Slider(
-                new GUIContent("Outer view radius", "Area that determines the ability to detect target within it, provided that it is also within the viewing angle cone"), 
-                fov.viewOuterRadius, 0, 20);
+            PropertySliderField(serializedObject.FindProperty("viewOuterRadius"), 0, 20,
+                new GUIContent("Outer view radius", "Area that determines the ability to detect target within it, provided that it is also within the viewing angle cone"));
             
-            fov.viewInnerRadius = EditorGUILayout.Slider(
-                new GUIContent("Inner view radius", "The minimum area that determines the ability to detect target within it"), 
-                fov.viewInnerRadius, 0, 10);
+            PropertySliderField(serializedObject.FindProperty("viewInnerRadius"), 0, 10,
+                new GUIContent("Inner view radius", "The minimum area that determines the ability to detect target within it"));
             
-            fov.viewAngle = EditorGUILayout.Slider(
-                new GUIContent("View angle", "Angle (in degrees), which determines the ability to spot objects within its area"), 
-                fov.viewAngle, 0, 360);
-            
-            EditorGUILayout.Space();
-            
-            // shows Field of View Special Zones Parameters
-            useSpecialZones = EditorGUILayout.Toggle("Use special zones", useSpecialZones);
-            if (EditorGUILayout.BeginFadeGroup(useSpecialZones ? 1 : 0))
+            PropertySliderField(serializedObject.FindProperty("viewAngle"), 0, 360,
+                new GUIContent("View angle", "Angle (in degrees), which determines the ability to spot objects within its area"));
+
+            // shows "Special Zones" main parameters
+            EditorGUILayout.PropertyField(useSpecialZones);
+            if (EditorGUILayout.BeginFadeGroup(useSpecialZones.boolValue ? 1 : 0))
             {
-                EditorGUI.indentLevel++;
-                
-                EditorGUILayout.Space();
-        
-                fov.safeZoneRadius = EditorGUILayout.Slider(
-                    new GUIContent("Safe zone radius", "Radius of an optional safe zone area"),
-                    fov.safeZoneRadius, 0, 10);
-                
-                fov.attackRangeRadius = EditorGUILayout.Slider(
-                    new GUIContent("Attack range radius", "Radius of an optional attack range area"),
-                    fov.attackRangeRadius, 0, 10);
-                
-                EditorGUI.indentLevel--;
+                PropertySliderField(serializedObject.FindProperty("safeZoneRadius"), 0, 10,
+                    new GUIContent("Safe zone radius", "Radius of an optional safe zone area"));
+
+                PropertySliderField(serializedObject.FindProperty("attackRangeRadius"), 0, 10,
+                    new GUIContent("Attack range radius", "Radius of an optional attack range area"));
             }
             EditorGUILayout.EndFadeGroup();
-            
             EditorGUILayout.Space();
-            
-            fov.zoneCheckInterval = EditorGUILayout.Slider(
-                new GUIContent("Update interval", "Time interval between zone checks (i.e. fov update)"), 
-                fov.zoneCheckInterval, 0.001f, 1);
-            
-            // layer mask field
-            string[] layerNames = new string[32];
-            for (int i = 0; i < layerNames.Length; i++)
-            {
-                layerNames[i] = LayerMask.LayerToName(i);
-            }
 
-            fov.obstacleLayerMask = EditorGUILayout.MaskField(
-                new GUIContent("Obstacle layer mask", "Layer with all obstacles, which is used during circle cast. Enemy cannot see through obstacles"),
-                fov.obstacleLayerMask, layerNames, EditorStyles.popup);
+            PropertySliderField(serializedObject.FindProperty("zoneCheckInterval"), 0.001f, 1,
+                new GUIContent("Update interval", "Time interval between zone checks (i.e. fov update)"));
+
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("obstacleLayerMask"));
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
         EditorGUILayout.Space();
-        
-        // shows Field of View Editor Parameters
-        showFovEditorParameters = EditorGUILayout.BeginFoldoutHeaderGroup(showFovEditorParameters, "Field of View Editor Parameters");
+        #endregion
+
+        #region EDITOR PARAMETERS GROUP
+        showFovEditorParameters = EditorGUILayout.BeginFoldoutHeaderGroup(showFovEditorParameters, "Visual Parameters");
         if (showFovEditorParameters)
         {
-            thickness = EditorGUILayout.Slider(
-                new GUIContent("Thickness", "Handles thickness"),
-                thickness, 0.5f, 2);
-            
-            mainFovColor = EditorGUILayout.ColorField(
-                new GUIContent("FOV main color", "Handles FOV main color"),
-                mainFovColor);
-            
-            // shows Field of View Special Zones Editor Parameters
-            if (EditorGUILayout.BeginFadeGroup(useSpecialZones ? 1 : 0))
+            PropertySliderField(serializedObject.FindProperty("thickness"), 0.5f, 2,
+                new GUIContent("Thickness", "Handles thickness"));
+
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("mainFovColor"));
+
+            // shows "Special Zones" visual parameters
+            if (EditorGUILayout.BeginFadeGroup(useSpecialZones.boolValue ? 1 : 0))
             {
-                EditorGUI.indentLevel++;
-                
-                EditorGUILayout.Space();
-        
-                safeZoneColor = EditorGUILayout.ColorField(
-                    new GUIContent("FOV safe zone color", "Handles FOV safe zone color"),
-                    safeZoneColor);
-            
-                attackRangeColor = EditorGUILayout.ColorField(
-                    new GUIContent("FOV attack range color", "Handles FOV attack range color"),
-                    attackRangeColor);
-                
-                EditorGUI.indentLevel--;
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("safeZoneColor"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("attackRangeColor"));
             }
             EditorGUILayout.EndFadeGroup();
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
         EditorGUILayout.Space();
-        
-        // shows Field of View Zone Checks
-        showFovChecks = EditorGUILayout.BeginFoldoutHeaderGroup(showFovChecks, "Field of View Zone Checks");
+        #endregion
+
+        #region ZONE CHECKS GROUP
+        showFovChecks = EditorGUILayout.BeginFoldoutHeaderGroup(showFovChecks, "Zones Check Debug");
         if (showFovChecks)
         {
             EditorGUI.BeginDisabledGroup(true);
@@ -147,25 +128,22 @@ public class FieldOfViewEditor : Editor
             fov.targetInsideViewOuterRadius = EditorGUILayout.Toggle("Target inside outer view radius", fov.targetInsideViewOuterRadius);
             fov.targetSpotted = EditorGUILayout.Toggle("Target spotted", fov.targetSpotted);
             
-            // shows Field of View Special Zones Checks
-            if (EditorGUILayout.BeginFadeGroup(useSpecialZones ? 1 : 0))
+            // shows "Special Zones" debug checks
+            if (EditorGUILayout.BeginFadeGroup(useSpecialZones.boolValue ? 1 : 0))
             {
-                EditorGUI.indentLevel++;
-                
-                EditorGUILayout.Space();
-                
                 fov.targetInsideSafeZone = EditorGUILayout.Toggle("Target inside safe zone", fov.targetInsideSafeZone);
                 fov.targetInsideAttackRange = EditorGUILayout.Toggle("Target inside attack range", fov.targetInsideAttackRange);
-                
-                EditorGUI.indentLevel--;
             }
             EditorGUILayout.EndFadeGroup();
-        
             EditorGUI.EndDisabledGroup();
         }
         EditorGUILayout.EndFoldoutHeaderGroup();
+        #endregion
+
+        // apply modified properties and repaint
+        EditorGUILayout.EndVertical();
+        serializedObject.ApplyModifiedProperties();
         
-        // repaint
         if (GUI.changed)
             InternalEditorUtility.RepaintAllViews();
     }
@@ -173,41 +151,40 @@ public class FieldOfViewEditor : Editor
     private void OnSceneGUI()
     {
         if (fov == null) return;
-        
-        fovPos = fov.transform.position;
-        
+
+        var fovPos = fov.transform.position;
+        var thickness = fov.thickness;
+
         /*
         // use this variable as center of wire arc (instead of fovPos) when sprite is not centered, otherwise keep it commented and use fovPos
         fixedFovPos = new Vector3(fovPos.x, fovPos.y, 0f) + fov.transform.TransformDirection(new Vector3(0f, offset, 0f));
         */
-
-        DrawMainFov();
         
-        DrawFovZone(fovPos, 360f, fov.safeZoneRadius, thickness, safeZoneColor); // draws safe zone radius
-        DrawFovZone(fovPos, 360f, fov.attackRangeRadius, thickness, attackRangeColor); // draws attack range radius
-    }
-
-    /// <summary>
-    /// Draws Main Field of View such as outer radius, inner radius and view angle cone
-    /// </summary>
-    private void DrawMainFov()
-    {
         // draws outer and inner view radius
-        DrawFovZone(fovPos, 360f, fov.viewOuterRadius, thickness, mainFovColor);
-        DrawFovZone(fovPos, 360f, fov.viewInnerRadius, thickness, mainFovColor);
-            
+        DrawFovZone(fovPos, 360f, fov.viewOuterRadius, thickness, fov.mainFovColor);
+        DrawFovZone(fovPos, 360f, fov.viewInnerRadius, thickness, fov.mainFovColor);
+
         // calculates and draws view angle cone
         Vector3 viewAngleLeft = CalculateDirectionFromAngle((-fov.viewAngle + 180) * 0.5f, fov.transform.eulerAngles.z); // left view angle: \|
         Vector3 viewAngleRight = CalculateDirectionFromAngle((fov.viewAngle + 180) * 0.5f, fov.transform.eulerAngles.z); // right view angle: |/
         
-        Handles.color = mainFovColor;
-        Handles.DrawLine(fovPos, fovPos + viewAngleLeft * fov.viewOuterRadius, thickness);
-        Handles.DrawLine(fovPos, fovPos + viewAngleRight * fov.viewOuterRadius, thickness);
+        Handles.color = fov.mainFovColor;
+        Handles.DrawLine(fovPos, fovPos + viewAngleLeft * fov.viewOuterRadius, fov.thickness);
+        Handles.DrawLine(fovPos, fovPos + viewAngleRight * fov.viewOuterRadius, fov.thickness);
+        
+        // draws special zones if used
+        if (useSpecialZones.boolValue is true)
+        {
+            DrawFovZone(fovPos, 360f, fov.safeZoneRadius, thickness, fov.safeZoneColor); // draws safe zone radius
+            DrawFovZone(fovPos, 360f, fov.attackRangeRadius, thickness, fov.attackRangeColor); // draws attack range radius
+        }
         
         // draws line from character to spotted target
-        if (!fov.targetInsideViewOuterRadius) return;
-        Handles.color = fov.targetSpotted ? targetSpottedColor : targetHiddenColor;
-        Handles.DrawLine(fovPos, fov.target.transform.position, thickness);
+        if (fov.targetInsideViewOuterRadius)
+        {
+            Handles.color = fov.targetSpotted ? fov.targetSpottedColor : fov.targetHiddenColor;
+            Handles.DrawLine(fovPos, fov.target.transform.position, thickness);
+        }
     }
 
     /// <summary>
@@ -229,13 +206,10 @@ public class FieldOfViewEditor : Editor
     /// </summary>
     /// <param name="inputAngle"> provided angle </param>
     /// <param name="inputEulerAngleZ"> provided euler Z angle </param>
-    /// <returns> Vector3 value which specifies direction from provided angle </returns>
     private Vector3 CalculateDirectionFromAngle(float inputAngle, float inputEulerAngleZ)
     {
         var newAngle = inputAngle - inputEulerAngleZ;
-        var calculatedDirection = new Vector3(Mathf.Sin(newAngle * Mathf.Deg2Rad), Mathf.Cos(newAngle * Mathf.Deg2Rad), 0f);
-        
-        return calculatedDirection;
+        return new Vector3(Mathf.Sin(newAngle * Mathf.Deg2Rad), Mathf.Cos(newAngle * Mathf.Deg2Rad), 0f);
     }
 }
 
@@ -254,7 +228,8 @@ public class FieldOfView : MonoBehaviour
     public float viewOuterRadius; // Area that determines the ability to detect target within it, provided that it is also within the viewing angle cone
     public float viewInnerRadius; // The minimum area that determines the ability to detect target within it
     public float viewAngle; // Angle (in degrees), which determines the ability to spot objects within its area
-    
+
+    public bool useSpecialZones;
     public float safeZoneRadius; // Radius of an optional safe zone area
     public float attackRangeRadius; // Radius of an optional attack range area
     
@@ -262,6 +237,16 @@ public class FieldOfView : MonoBehaviour
     public LayerMask obstacleLayerMask; // Layer with all obstacles, which is used during circle cast. Enemy cannot see through obstacles
     public GameObject target; // Target object
     # endregion
+    
+    #region FOV EDITOR VISUAL PARAMETERS
+    public Color mainFovColor = Color.white; // view radius and view angle handles color
+    public Color safeZoneColor = Color.yellow; // safe zone handles color
+    public Color attackRangeColor = Color.red; // attack range handles color
+    public float thickness = 0.5f; // handles thickness
+
+    public readonly Color targetSpottedColor = Color.green;
+    public readonly Color targetHiddenColor = Color.red;
+    #endregion
 
     private void Awake() => target = PlayerController.self.gameObject; // set target here
 
@@ -281,10 +266,13 @@ public class FieldOfView : MonoBehaviour
             CheckForVisibleTarget();
         
             // do not perform "safe zone" and "attack range" checks if they aren't used
-            if (safeZoneRadius > 0) 
-                CheckSafeZone();
-            if (attackRangeRadius > 0)
-                CheckAttackRange();
+            if (useSpecialZones)
+            {
+                if (safeZoneRadius > 0) 
+                    CheckSafeZone();
+                if (attackRangeRadius > 0)
+                    CheckAttackRange();
+            }
         }
     }
 
@@ -326,7 +314,6 @@ public class FieldOfView : MonoBehaviour
     /// </summary>
     /// <param name="radius"> float value considered as "radius" to check (e.g. "safe zone" or "attack range") </param>
     /// <param name="obstacleMask"> LayerMask considered as obstacle layer, which is used during circle cast </param>
-    /// <returns> bool value which specifies if target is inside specified radius </returns>
     private bool CheckIfTargetIsInsideSpecificRadius(float radius, LayerMask obstacleMask)
     {
         if (Vector2.SqrMagnitude(target.transform.position - transform.position) <= radius * radius) // when target is inside inner view radius
