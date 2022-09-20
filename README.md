@@ -5,7 +5,9 @@ This is standalone version of my "Top-down Ai sensor 2D" that is included inside
 Presented tool is an Ai sensor that is intended to be used in 2D top-down perspective environmewnts.
 It contains its own custom editor to display all the modifiable parameters and the GUI to visualize character's field of view.
 
-<img src="images/fov_overview.gif">
+<p align="center">
+ <img src="images/fov_overview.gif">
+</p>
 
 ## How it works
 System performs cyclical operations by checking if selected target can be spotted by the character.
