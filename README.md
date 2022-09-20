@@ -1,31 +1,31 @@
-# Field of View tool
-2D top-down perspective "Field of View" game mechanics tool.
-Whole system is about performing cyclical check whether the target is inside character's field of view and its not covered by any obstacle.
+# Top-down AI sensor 2D
+This is standalone version of my "Top-down Ai sensor 2D" that is included inside my [utils package](https://github.com/Skallu0711/Skallu-Utils), so it doesn't require any additional imports to work properly.
 
-Presented system has built-in editor tool, which visualises character's field of view by drawing debug circles and lines on scene.
-Every parameter that makes up "Field of View" can be modified via inspector to suit Your needs.
+## Overview
+Presented tool is an Ai sensor that is intended to be used in 2D top-down perspective environmewnts.
+It contains its own custom editor to display all the modifiable parameters and the GUI to visualize character's field of view.
 
 <img src="images/fov_overview.gif">
 
+## How it works
+System performs cyclical operations by checking if selected target can be spotted by the character.
+
+Spot check:
+1. check the distance between target and character
+2. check if the target is inside character's field of view
+3. check if the target is not behind any obstacle
+
 ## Setup
-1. attach component to game object:
-<img src="images/fov_add.png">
-
-2. adjust values:
-<img src="images/fov_inspector.png">
-
-3. set target inside script:
+1. attach "TopDownAiSensor2D" component to game object:
+2. adjust values inside inspector to suit your needs
+3. set target object via uinspector or inside "Awake" method
 ```csharp
-private void Awake()
-    {
-        // set target here
-        // target = 
-    }
+ private void Awake()
+ {
+      if (targetObject == null)
+      {
+           // set target object here
+           targetObject = GameObject.FindGameObjectWithTag("Player");
+      }
+ }
 ```
-
-## Usage Example:
-<img src="images/fov_example.gif">
-
-## My package
-Here is a link for my custom package, which i used in this project:
-https://github.com/Skallu0711/Skallu-Utils
